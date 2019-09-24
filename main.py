@@ -69,3 +69,4 @@ if args.action == "train":
 
 if args.action == "predict":
     trainer.predict(model_dir, results_dir, features_path, vid_list_file_tst, num_epochs, actions_dict, device, sample_rate)
+    
