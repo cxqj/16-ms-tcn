@@ -15,7 +15,7 @@ class BatchGenerator(object):
         self.features_path = features_path
         self.sample_rate = sample_rate
 
-    def reset(self):
+    def reset(self):    # 对数据进行shuffle
         self.index = 0
         random.shuffle(self.list_of_examples)
 
@@ -24,12 +24,14 @@ class BatchGenerator(object):
             return True
         return False
 
+    # 获取视频名
     def read_data(self, vid_list_file):
         file_ptr = open(vid_list_file, 'r')
         self.list_of_examples = file_ptr.read().split('\n')[:-1]
         file_ptr.close()
         random.shuffle(self.list_of_examples)
 
+    # 根据视频名称加载一个batch的数据
     def next_batch(self, batch_size):
         batch = self.list_of_examples[self.index:self.index + batch_size]
         self.index += batch_size
