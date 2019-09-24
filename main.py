@@ -1,8 +1,8 @@
 #!/usr/bin/python2.7
 
 import torch
-from model import Trainer
-from batch_gen import BatchGenerator
+from model import Trainer # 模型
+from batch_gen import BatchGenerator  # 数据加载
 import os
 import argparse
 import random
@@ -16,16 +16,16 @@ torch.cuda.manual_seed_all(seed)
 torch.backends.cudnn.deterministic = True
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--action', default='train')
+parser.add_argument('--action', default='train')  # train/predict
 parser.add_argument('--dataset', default="gtea")
-parser.add_argument('--split', default='1')
+parser.add_argument('--split', default='1')  #  split number (1-5) for 50salads and (1-4) for the other datasets.
 
 args = parser.parse_args()
 
 num_stages = 4
 num_layers = 10
-num_f_maps = 64
-features_dim = 2048
+num_f_maps = 64  
+features_dim = 2048  
 bz = 1
 lr = 0.0005
 num_epochs = 50
