@@ -11,10 +11,10 @@ import numpy as np
 class MultiStageModel(nn.Module):
     def __init__(self, num_stages, num_layers, num_f_maps, dim, num_classes):
         super(MultiStageModel, self).__init__()
-        self.stage1 = SingleStageModel(num_layers, num_f_maps, dim, num_classes)
+        self.stage1 = SingleStageModel(num_layers, num_f_maps, dim, num_classes)   # 单阶段层
         self.stages = nn.ModuleList([copy.deepcopy(SingleStageModel(num_layers, num_f_maps, num_classes, num_classes)) for s in range(num_stages-1)])
 
-    def forward(self, x, mask):
+    def forward(self, x, mask):  
         out = self.stage1(x, mask)
         outputs = out.unsqueeze(0)
         for s in self.stages:
@@ -39,7 +39,7 @@ class SingleStageModel(nn.Module):
 
 
 class DilatedResidualLayer(nn.Module):
-    def __init__(self, dilation, in_channels, out_channels):
+    def __init__(self, dilation, in_channels, out_channels):  # dilation : 2**i
         super(DilatedResidualLayer, self).__init__()
         self.conv_dilated = nn.Conv1d(in_channels, out_channels, 3, padding=dilation, dilation=dilation)
         self.conv_1x1 = nn.Conv1d(out_channels, out_channels, 1)
@@ -54,18 +54,19 @@ class DilatedResidualLayer(nn.Module):
 
 class Trainer:
     def __init__(self, num_blocks, num_layers, num_f_maps, dim, num_classes):
-        self.model = MultiStageModel(num_blocks, num_layers, num_f_maps, dim, num_classes)
-        self.ce = nn.CrossEntropyLoss(ignore_index=-100)
-        self.mse = nn.MSELoss(reduction='none')
+        self.model = MultiStageModel(num_blocks, num_layers, num_f_maps, dim, num_classes)  # 构建多阶段时序卷积模型，num_blocks = num_stages
+        self.ce = nn.CrossEntropyLoss(ignore_index=-100)  # 交叉熵损失函数
+        self.mse = nn.MSELoss(reduction='none')  # MSE损失函数
         self.num_classes = num_classes
-
-    def train(self, save_dir, batch_gen, num_epochs, batch_size, learning_rate, device):
+  
+   
+    def train(self, save_dir, batch_gen, num_epochs, batch_size, learning_rate, device):  # save_dir : model_dir
         self.model.train()
         self.model.to(device)
         optimizer = optim.Adam(self.model.parameters(), lr=learning_rate)
         for epoch in range(num_epochs):
             epoch_loss = 0
-            correct = 0
+            correct = 0   # 计算acc时用
             total = 0
             while batch_gen.has_next():
                 batch_input, batch_target, mask = batch_gen.next_batch(batch_size)
@@ -91,7 +92,7 @@ class Trainer:
             torch.save(optimizer.state_dict(), save_dir + "/epoch-" + str(epoch + 1) + ".opt")
             print("[epoch %d]: epoch loss = %f,   acc = %f" % (epoch + 1, epoch_loss / len(batch_gen.list_of_examples),
                                                                float(correct)/total))
-
+    # 对帧级概率进行预测
     def predict(self, model_dir, results_dir, features_path, vid_list_file, epoch, actions_dict, device, sample_rate):
         self.model.eval()
         with torch.no_grad():
