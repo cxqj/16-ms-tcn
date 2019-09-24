@@ -26,9 +26,9 @@ class MultiStageModel(nn.Module):
 class SingleStageModel(nn.Module):
     def __init__(self, num_layers, num_f_maps, dim, num_classes):
         super(SingleStageModel, self).__init__()
-        self.conv_1x1 = nn.Conv1d(dim, num_f_maps, 1)
-        self.layers = nn.ModuleList([copy.deepcopy(DilatedResidualLayer(2 ** i, num_f_maps, num_f_maps)) for i in range(num_layers)])
-        self.conv_out = nn.Conv1d(num_f_maps, num_classes, 1)
+        self.conv_1x1 = nn.Conv1d(dim, num_f_maps, 1)  
+        self.layers = nn.ModuleList([copy.deepcopy(DilatedResidualLayer(2 ** i, num_f_maps, num_f_maps)) for i in range(num_layers)])  # 每一步扩大两倍的时序感受野
+        self.conv_out = nn.Conv1d(num_f_maps, num_classes, 1)  
 
     def forward(self, x, mask):
         out = self.conv_1x1(x)
