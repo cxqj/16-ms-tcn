@@ -11,30 +11,30 @@ import numpy as np
 class MultiStageModel(nn.Module):
     def __init__(self, num_stages, num_layers, num_f_maps, dim, num_classes):
         super(MultiStageModel, self).__init__()
-        self.stage1 = SingleStageModel(num_layers, num_f_maps, dim, num_classes)   # 单阶段层
+        self.stage1 = SingleStageModel(num_layers, num_f_maps, dim, num_classes)   # 单阶段层，因为第一个阶段和输入有联系，输入的特征并不是一致的，因此需要单独构建
         self.stages = nn.ModuleList([copy.deepcopy(SingleStageModel(num_layers, num_f_maps, num_classes, num_classes)) for s in range(num_stages-1)])
 
     def forward(self, x, mask):  
         out = self.stage1(x, mask)
         outputs = out.unsqueeze(0)
         for s in self.stages:
-            out = s(F.softmax(out, dim=1) * mask[:, 0:1, :], mask)
+            out = s(F.softmax(out, dim=1) * mask[:, 0:1, :], mask)  # 送入下一阶段是当前阶段的得分概率和mask
             outputs = torch.cat((outputs, out.unsqueeze(0)), dim=0)
-        return outputs
+        return outputs   # 输出的就是概率值
 
 
 class SingleStageModel(nn.Module):
     def __init__(self, num_layers, num_f_maps, dim, num_classes):
         super(SingleStageModel, self).__init__()
-        self.conv_1x1 = nn.Conv1d(dim, num_f_maps, 1)  
+        self.conv_1x1 = nn.Conv1d(dim, num_f_maps, 1)  # 将输入特征维度降维
         self.layers = nn.ModuleList([copy.deepcopy(DilatedResidualLayer(2 ** i, num_f_maps, num_f_maps)) for i in range(num_layers)])  # 每一步扩大两倍的时序感受野
-        self.conv_out = nn.Conv1d(num_f_maps, num_classes, 1)  
+        self.conv_out = nn.Conv1d(num_f_maps, num_classes, 1)    # 输出类别数
 
     def forward(self, x, mask):
         out = self.conv_1x1(x)
         for layer in self.layers:
             out = layer(out, mask)
-        out = self.conv_out(out) * mask[:, 0:1, :]
+        out = self.conv_out(out) * mask[:, 0:1, :]  # 这里的maks是什么
         return out
 
 
@@ -72,11 +72,13 @@ class Trainer:
                 batch_input, batch_target, mask = batch_gen.next_batch(batch_size)
                 batch_input, batch_target, mask = batch_input.to(device), batch_target.to(device), mask.to(device)
                 optimizer.zero_grad()
-                predictions = self.model(batch_input, mask)
+                predictions = self.model(batch_input, mask)  # 将特征和mask送入网络预测
 
                 loss = 0
                 for p in predictions:
-                    loss += self.ce(p.transpose(2, 1).contiguous().view(-1, self.num_classes), batch_target.view(-1))
+                    # 分类误差
+                    loss += self.ce(p.transpose(2, 1).contiguous().view(-1, self.num_classes), batch_target.view(-1))  # 多分类交叉熵损失函数
+                    # 截断均方误差
                     loss += 0.15*torch.mean(torch.clamp(self.mse(F.log_softmax(p[:, :, 1:], dim=1), F.log_softmax(p.detach()[:, :, :-1], dim=1)), min=0, max=16)*mask[:, :, 1:])
 
                 epoch_loss += loss.item()
@@ -104,16 +106,16 @@ class Trainer:
             for vid in list_of_vids:
                 print vid
                 features = np.load(features_path + vid.split('.')[0] + '.npy')
-                features = features[:, ::sample_rate]
+                features = features[:, ::sample_rate]   # 因为抽取的时候是抽取的没一帧的特征，由于50——salads的帧率是30fps，所以根据采样率采样帧保持一致
                 input_x = torch.tensor(features, dtype=torch.float)
                 input_x.unsqueeze_(0)
                 input_x = input_x.to(device)
-                predictions = self.model(input_x, torch.ones(input_x.size(), device=device))
+                predictions = self.model(input_x, torch.ones(input_x.size(), device=device))  # 为什么预测的时候每帧的mask为1
                 _, predicted = torch.max(predictions[-1].data, 1)
                 predicted = predicted.squeeze()
                 recognition = []
                 for i in range(len(predicted)):
-                    recognition = np.concatenate((recognition, [actions_dict.keys()[actions_dict.values().index(predicted[i].item())]]*sample_rate))
+                    recognition = np.concatenate((recognition, [actions_dict.keys()[actions_dict.values().index(predicted[i].item())]]*sample_rate))  # 恢复采样率是为了和原始的帧对应
                 f_name = vid.split('/')[-1].split('.')[0]
                 f_ptr = open(results_dir + "/" + f_name, "w")
                 f_ptr.write("### Frame level recognition: ###\n")
