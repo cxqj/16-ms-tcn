@@ -63,3 +63,5 @@ class BatchGenerator(object):
             mask[i, :, :np.shape(batch_target[i])[0]] = torch.ones(self.num_classes, np.shape(batch_target[i])[0])  # 全部置为1，好像没用
 
         return batch_input_tensor, batch_target_tensor, mask
+    
+    
