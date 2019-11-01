@@ -16,7 +16,7 @@ class MultiStageModel(nn.Module):
 
     def forward(self, x, mask):  
         out = self.stage1(x, mask)
-        outputs = out.unsqueeze(0)
+        outputs = out.unsqueeze(0)  # 增加第一个维度，保存每个阶段的结果
         for s in self.stages:
             out = s(F.softmax(out, dim=1) * mask[:, 0:1, :], mask)  # 送入下一阶段是当前阶段的得分概率和mask
             outputs = torch.cat((outputs, out.unsqueeze(0)), dim=0)
@@ -75,6 +75,7 @@ class Trainer:
                 predictions = self.model(batch_input, mask)  # 将特征和mask送入网络预测
 
                 loss = 0
+                # 对每个阶段计算loss
                 for p in predictions:
                     # 分类误差
                     loss += self.ce(p.transpose(2, 1).contiguous().view(-1, self.num_classes), batch_target.view(-1))  # 多分类交叉熵损失函数
@@ -85,7 +86,7 @@ class Trainer:
                 loss.backward()
                 optimizer.step()
 
-                _, predicted = torch.max(predictions[-1].data, 1)
+                _, predicted = torch.max(predictions[-1].data, 1)   # 返回最大概率的值和索引
                 correct += ((predicted == batch_target).float()*mask[:, 0, :].squeeze(1)).sum().item()
                 total += torch.sum(mask[:, 0, :]).item()
 
