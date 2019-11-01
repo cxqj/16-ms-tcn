@@ -65,3 +65,4 @@ class BatchGenerator(object):
         return batch_input_tensor, batch_target_tensor, mask
     
     
+    
