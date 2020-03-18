@@ -46,16 +46,16 @@ class BatchGenerator(object):
             classes = np.zeros(min(np.shape(features)[1], len(content)))  # 这个gt里应该是每一帧的类别
             for i in range(len(classes)):
                 classes[i] = self.actions_dict[content[i]]  # 更新每一帧所属的类别
-            batch_input .append(features[:, ::self.sample_rate])   # (N,C,T)，因为论文是对时序卷积，因此空间维度倍移除了
+            batch_input .append(features[:, ::self.sample_rate])   # (C,T)，因为论文是对时序卷积，因此空间维度倍移除了
             batch_target.append(classes[::self.sample_rate])   
 
         length_of_sequences = map(len, batch_target)   # 获取每一个视频的序列长度
         
-        # 总视频数，通道数，帧数
+        # (B,C,T)
         batch_input_tensor = torch.zeros(len(batch_input), np.shape(batch_input[0])[0], max(length_of_sequences), dtype=torch.float)
-        # (视频数，帧数)
+        # (B,T)
         batch_target_tensor = torch.ones(len(batch_input), max(length_of_sequences), dtype=torch.long)*(-100)
-        # (视频数，类别，帧数)
+        # (B,C,T) 
         mask = torch.zeros(len(batch_input), self.num_classes, max(length_of_sequences), dtype=torch.float)
         for i in range(len(batch_input)):
             batch_input_tensor[i, :, :np.shape(batch_input[i])[1]] = torch.from_numpy(batch_input[i])
