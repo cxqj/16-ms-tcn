@@ -20,7 +20,7 @@ class MultiStageModel(nn.Module):
         for s in self.stages:
             out = s(F.softmax(out, dim=1) * mask[:, 0:1, :], mask)  # 送入下一阶段是当前阶段的得分概率和mask
             outputs = torch.cat((outputs, out.unsqueeze(0)), dim=0)
-        return outputs   # 输出的就是概率值
+        return outputs   # 输出的就是4个阶段每个阶段的每个时序位置的类别概率值
 
 
 class SingleStageModel(nn.Module):
@@ -72,7 +72,7 @@ class Trainer:
                 batch_input, batch_target, mask = batch_gen.next_batch(batch_size)
                 batch_input, batch_target, mask = batch_input.to(device), batch_target.to(device), mask.to(device)
                 optimizer.zero_grad()
-                predictions = self.model(batch_input, mask)  # 将特征和mask送入网络预测
+                predictions = self.model(batch_input, mask)  # 将特征和mask送入网络预测   (B,C,T)
 
                 loss = 0
                 # 对每个阶段计算loss
