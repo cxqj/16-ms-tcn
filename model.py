@@ -9,7 +9,7 @@ import numpy as np
 
 
 class MultiStageModel(nn.Module):
-    def __init__(self, num_stages, num_layers, num_f_maps, dim, num_classes):
+    def __init__(self, num_stages, num_layers, num_f_maps, dim, num_classes):  #num_f_maps = 64, dim=2048
         super(MultiStageModel, self).__init__()
         self.stage1 = SingleStageModel(num_layers, num_f_maps, dim, num_classes)   # 单阶段层，因为第一个阶段和输入有联系，输入的特征并不是一致的，因此需要单独构建
         self.stages = nn.ModuleList([copy.deepcopy(SingleStageModel(num_layers, num_f_maps, num_classes, num_classes)) for s in range(num_stages-1)])
