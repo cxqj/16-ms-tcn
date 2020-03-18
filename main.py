@@ -37,8 +37,8 @@ sample_rate = 1   # 在Predict时对特征时序的采样率
 if args.dataset == "50salads":
     sample_rate = 2
 
-vid_list_file = "./data/"+args.dataset+"/splits/train.split"+args.split+".bundle"
-vid_list_file_tst = "./data/"+args.dataset+"/splits/test.split"+args.split+".bundle"
+vid_list_file = "./data/"+args.dataset+"/splits/train.split"+args.split+".bundle"  # 视频id
+vid_list_file_tst = "./data/"+args.dataset+"/splits/test.split"+args.split+".bundle"  
 features_path = "./data/"+args.dataset+"/features/"
 gt_path = "./data/"+args.dataset+"/groundTruth/"
 
